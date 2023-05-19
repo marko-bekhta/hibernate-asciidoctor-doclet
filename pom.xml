@@ -49,6 +49,27 @@
                             <stripVersion>true</stripVersion>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>unpack-dependencies-javadoc-packagelists</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.asciidoctor</groupId>
+                                    <artifactId>asciidoctorj</artifactId>
+                                    <classifier>javadoc</classifier>
+                                    <type>jar</type>
+                                    <version>${asciidoctorj.version}</version>
+                                    <outputDirectory>${project.build.directory}/dependencies-javadoc/asciidoctorj</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                            <includes>package-list,element-list</includes>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
