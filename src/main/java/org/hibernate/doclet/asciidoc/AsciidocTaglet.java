@@ -21,6 +21,7 @@ import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet;
 import org.asciidoctor.Asciidoctor;
+import org.asciidoctor.Attributes;
 import org.asciidoctor.Options;
 
 /**
@@ -74,7 +75,16 @@ public class AsciidocTaglet implements Taglet {
 	@Override
 	public String toString(List<? extends DocTree> tags, Element element) {
 		String text = getText( tags.get( 0 ), element );
-		return asciidoctor.convert( text, Options.builder().build() );
+		return asciidoctor.convert( text, Options.builder()
+				.attributes( Attributes.builder()
+						.sourceHighlighter( "coderay" )
+						// using inline styles -- so that we don't need to include a css file in the doclet.
+						// if we'd want to customize it -- we can switch to `class` and then copy css file to the output dir
+						// using a file manager.
+						.attribute( "coderay-css", "style" )
+						.copyCss( true )
+						.build()
+				).build() );
 	}
 
 	private String getText(DocTree doc, Element element) {

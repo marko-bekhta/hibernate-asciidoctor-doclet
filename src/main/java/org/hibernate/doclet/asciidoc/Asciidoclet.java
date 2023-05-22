@@ -10,7 +10,6 @@ import java.util.Set;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.StandardDoclet;
 
-// TODO: figure out how to register styles from asciidoc so they are included in the final javadocs
 public class Asciidoclet extends StandardDoclet {
 
 	private final List<String> links = new ArrayList<>();
