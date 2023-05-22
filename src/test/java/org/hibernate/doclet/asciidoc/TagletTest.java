@@ -17,6 +17,9 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
+import org.hibernate.doclet.asciidoc.other.AnotherDocClass;
+import org.hibernate.doclet.asciidoc.other.OtherDocClass;
+
 import org.junit.jupiter.api.Test;
 
 public class TagletTest {
@@ -27,15 +30,19 @@ public class TagletTest {
 
 		DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
 		try ( StandardJavaFileManager fm = tool.getStandardFileManager( null, null, null ) ) {
-			JavaFileObject tesJavadocSourceFile = fm.getJavaFileObjects( getSourceFile( TestJavadoc.class ) )
-					.iterator().next();
 
 			File renderedJavadocsLocation = directoryInTarget( "javadocs" );
 			fm.setLocation(
 					DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList( renderedJavadocsLocation ) );
 			fm.setLocation( DocumentationTool.Location.TAGLET_PATH, Arrays.asList( tagletCompiledSources ) );
-			Iterable<? extends JavaFileObject> files = Arrays.asList( tesJavadocSourceFile );
+			Iterable<? extends JavaFileObject> files = Arrays.asList(
+					javaFileObject( fm, TestJavadoc.class ),
+					javaFileObject( fm, AnotherDocClass.class ),
+					javaFileObject( fm, OtherDocClass.class )
+
+			);
 			Iterable<String> options = Arrays.asList(
+					"-doclet", "org.hibernate.doclet.asciidoc.Asciidoclet",
 					// the taglet itself
 					"-taglet", AsciidocTaglet.class.getName(),
 					// link to external javadocs, we'll point to AsciidoctorJ and JDK
@@ -61,6 +68,10 @@ public class TagletTest {
 
 			assertTrue( doc.contains( "<code>asciidoc</code>" ) );
 		}
+	}
+
+	private JavaFileObject javaFileObject(StandardJavaFileManager fm, Class<?> clazz) {
+		return fm.getJavaFileObjects( getSourceFile( clazz ) ).iterator().next();
 	}
 
 	private File directoryInTarget(String name) throws IOException {

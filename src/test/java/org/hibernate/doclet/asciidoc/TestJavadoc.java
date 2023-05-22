@@ -48,14 +48,14 @@ public class TestJavadoc {
 		/**
 		 * method no params
 		 */
-		boolean isSomething() {
+		public boolean isSomething() {
 			return true;
 		}
 
 		/**
 		 * method with params
 		 */
-		void methodWithParameters(String string, Integer integer) {
+		public void methodWithParameters(String string, Integer integer) {
 
 		}
 

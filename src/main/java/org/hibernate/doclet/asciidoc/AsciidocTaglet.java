@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.LinkTree;
@@ -34,6 +33,7 @@ public class AsciidocTaglet implements Taglet {
 
 	private final Asciidoctor asciidoctor;
 	private DocletEnvironment environment;
+	private LinksHelper linksHelper;
 
 	public AsciidocTaglet() {
 		asciidoctor = create();
@@ -63,6 +63,12 @@ public class AsciidocTaglet implements Taglet {
 	public void init(DocletEnvironment env, Doclet doclet) {
 		// env provides access to various utils
 		this.environment = env;
+		if ( doclet instanceof Asciidoclet ) {
+			linksHelper = ( (Asciidoclet) doclet ).linksHelper();
+		}
+		else {
+			linksHelper = new LinksHelper( env.getElementUtils(), List.of(), Map.of() );
+		}
 	}
 
 	@Override
@@ -72,26 +78,14 @@ public class AsciidocTaglet implements Taglet {
 	}
 
 	private String getText(DocTree doc, Element element) {
-		String elementBase;
-		if ( !( ElementKind.CLASS.equals( element.getKind() )
-				|| ElementKind.INTERFACE.equals( element.getKind() )
-				|| ElementKind.ENUM.equals( element.getKind() ) ) ) {
-			elementBase = element.getEnclosingElement().toString();
-		}
-		else {
-			elementBase = element.toString();
-		}
-
-		return new AsciidocTagDocTreeVisitor( element, elementBase ).visit( doc, null );
+		return new AsciidocTagDocTreeVisitor( element ).visit( doc, null );
 	}
 
 	private class AsciidocTagDocTreeVisitor extends SimpleDocTreeVisitor<String, Void> {
 		private final Element element;
-		private final String elementBase;
 
-		public AsciidocTagDocTreeVisitor(Element element, String elementBase) {
+		public AsciidocTagDocTreeVisitor(Element element) {
 			this.element = element;
-			this.elementBase = elementBase;
 		}
 
 		@Override
@@ -119,23 +113,10 @@ public class AsciidocTaglet implements Taglet {
 							reference
 					) );
 
-
-			String href;
-			if ( !( ElementKind.CLASS.equals( referenceElement.getKind() )
-					|| ElementKind.INTERFACE.equals( referenceElement.getKind() )
-					|| ElementKind.ENUM.equals( referenceElement.getKind() ) ) ) {
-				href = subLink(
-						elementBase,
-						referenceElement.getEnclosingElement().toString()
-				) + ".html#" + referenceElement;
-			}
-			else {
-				href = subLink( elementBase, referenceElement.toString() );
-			}
-
+			String href = linksHelper.javadocLink( referenceElement, element );
 			String label = getLinkLabel( node.getLabel(), referenceElement );
 
-			return "javadoc:" + "stub" + "[ href=" + href + ", label=" + label + "]";
+			return "javadoc:" + "stub" + "[ href=" + href + ", label=" + label + "] ";
 		}
 
 		/*
@@ -149,59 +130,19 @@ public class AsciidocTaglet implements Taglet {
 
 		private String getLinkLabel(List<? extends DocTree> labels, Element referenceElement) {
 			StringBuilder sb = new StringBuilder();
-			labels.forEach( l -> {
-				l.accept( new SimpleDocTreeVisitor<String, Void>() {
-					@Override
-					public String visitText(TextTree node, Void unused) {
-						sb.append( node.getBody() );
-						return super.visitText( node, unused );
-					}
-				}, null );
-			} );
+			labels.forEach( l -> l.accept( new SimpleDocTreeVisitor<String, Void>() {
+				@Override
+				public String visitText(TextTree node, Void unused) {
+					sb.append( node.getBody() );
+					return super.visitText( node, unused );
+				}
+			}, null ) );
 
 			String label = sb.toString();
 			if ( label.isBlank() ) {
 				label = referenceElement.getSimpleName().toString();
 			}
 			return label;
-		}
-
-		/* when we have a link reference in javadoc we need to build a relative link from a place where we are (where the reference lives in the doc)
-		 * to where we are pointing. So we want to remove the leading matches to end up with less ../.. in the href.
-		 * */
-		private String subLink(String a, String b) {
-			StringBuilder result = new StringBuilder();
-			String[] current = a.split( "\\." );
-			String[] ref = b.split( "\\." );
-
-			int index;
-			for ( index = 0; index < current.length && index < ref.length; index++ ) {
-				if ( !current[index].equals( ref[index] ) ) {
-					break;
-				}
-			}
-			if ( index == 0 ) {
-				// means no match at the start, most likely we are dealing with a reference to some external lib or to JDK class...
-				// TODO: figure out what can be done here ...
-				// result.append( "some-external-javadoc-path-to-who-knows-where" );
-				result.append( '/' );
-			}
-			else {
-				for ( int i = index - 1; i < current.length; i++ ) {
-					result.append( ".." );
-					if ( result.length() > 0 ) {
-						result.append( '/' );
-					}
-				}
-			}
-			for ( int i = Math.max( index - 1, 0 ); i < ref.length; i++ ) {
-				result.append( ref[i] );
-				if ( i != ref.length - 1 ) {
-					result.append( '/' );
-				}
-			}
-
-			return result.toString();
 		}
 	}
 }
