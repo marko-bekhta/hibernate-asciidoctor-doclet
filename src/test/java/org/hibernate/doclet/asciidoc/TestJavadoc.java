@@ -35,6 +35,45 @@ public class TestJavadoc {
 	}
 
 
+	/**
+	 * @asciidoc
+	 *
+	 * Marker interface for Fetches that are actually references to
+	 * another fetch based on "normalized navigable path"
+	 *
+	 * The following query is used throughout the javadocs for these impls
+	 * to help describe what it going on and why certain methods do certain things.
+	 *
+	 * [source,java,subs=attributes+]
+	 * ----
+	 * {@literal @}Entity
+	 * class Person {
+	 *     ...
+	 *     {@literal @}ManyToOne (mappedBy="owner")
+	 *     Address getAddress() {...}
+	 * }
+	 *
+	 * {@literal @}Entity
+	 * class Address {
+	 *     ...
+	 *     {@literal @}ManyToOne
+	 *     Person getOwner() {...}
+	 * }
+	 *
+	 * from Person p
+	 * 		join fetch p.address a
+	 * 		join fetch a.owner o
+	 * 		join fetch o.address oa
+	 * ----
+	 *
+	 *
+	 * Here we have one root result and 3 fetches.  2 of the fetches are bi-directional:
+	 *
+	 * 		`o`:: The paths `p` and `p.address.owner` (aliased as `o`) are the same table reference in SQL terms
+	 * 		`oa`:: The paths `p.address` and `p.address.owner.address` (aliased as `oa`) are again the same table reference
+	 *
+	 * @author Steve Ebersole
+	 */
 	public static class InnerClass {
 		public static final String CONSTANT = "some value";
 

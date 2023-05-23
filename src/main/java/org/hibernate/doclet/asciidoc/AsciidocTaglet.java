@@ -12,6 +12,7 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.LinkTree;
+import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
@@ -75,7 +76,8 @@ public class AsciidocTaglet implements Taglet {
 	@Override
 	public String toString(List<? extends DocTree> tags, Element element) {
 		String text = getText( tags.get( 0 ), element );
-		return asciidoctor.convert( text, Options.builder()
+		// before converting the markup we remove the leading space that comes from the comment formatting
+		return asciidoctor.convert( text.replaceAll( "(?m)^[ ]", "" ), Options.builder()
 				.attributes( Attributes.builder()
 						.sourceHighlighter( "coderay" )
 						// using inline styles -- so that we don't need to include a css file in the doclet.
@@ -109,7 +111,7 @@ public class AsciidocTaglet implements Taglet {
 
 		@Override
 		public String visitText(TextTree node, Void p) {
-			return node.getBody().replaceAll( "(?m)^[ \t]", "" );
+			return node.getBody();
 		}
 
 		@Override
@@ -127,6 +129,16 @@ public class AsciidocTaglet implements Taglet {
 			String label = getLinkLabel( node.getLabel(), referenceElement );
 
 			return "javadoc:" + "stub" + "[ href=" + href + ", label=" + label + "] ";
+		}
+
+		@Override
+		public String visitLiteral(LiteralTree node, Void unused) {
+			if ( DocTree.Kind.CODE.equals( node.getKind() ) ) {
+				return String.format( "`%s`", node.getBody().getBody() );
+			}
+			else {
+				return node.getBody().getBody();
+			}
 		}
 
 		/*
