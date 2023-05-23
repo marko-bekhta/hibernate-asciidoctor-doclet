@@ -80,13 +80,16 @@ public final class LinksHelper {
 	}
 
 	private void readElementList(InputStream input, String path) throws IOException {
+		path = path.endsWith( "/" ) ? path : path + "/";
 		try ( BufferedReader in = new BufferedReader( new InputStreamReader( input ) ) ) {
 			String element = null;
+			String moduleName = null;
 			while ( ( element = in.readLine() ) != null ) {
-				if ( element.length() > 0 && ( !element.startsWith( MODULE_PREFIX ) )) {
-						String pkg = element.replace( '.', '/' );
-						links.put( element, path + pkg );
-
+				if ( element.length() > 0 ) {
+					if ( element.startsWith( MODULE_PREFIX ) ) {
+						moduleName = element.replace( MODULE_PREFIX, "" );
+					}
+					links.put( element, path + ( moduleName == null ? "" : moduleName + "/" ) );
 				}
 			}
 		}
@@ -94,7 +97,7 @@ public final class LinksHelper {
 
 	public String javadocLink(Element referenceElement, Element element) {
 		return links.getOrDefault(
-				elements.getPackageOf( element ).toString(),
+				elements.getPackageOf( referenceElement ).toString(),
 				relativeLink( element )
 		) + link( referenceElement );
 	}
@@ -126,8 +129,7 @@ public final class LinksHelper {
 
 		return base.isEmpty() ? "/" : typeQualifiedName.toString().substring( 0, base.length() + 1 ).replace( '.', '/' )
 				+ fileName + "html#"
-				// escaping the comma since Asciidoctor will treat it as separator between macro attributes
-				+ result.replace( ",", "&comma;" );
+				+ result;
 	}
 
 	private String enclosingType(Element element) {

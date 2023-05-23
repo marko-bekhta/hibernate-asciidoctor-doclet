@@ -6,6 +6,8 @@ import org.hibernate.doclet.asciidoc.other.OtherDocClass;
 /**
  * @asciidoc some text in `asciidoc`
  *
+ * {@link java.util.Objects#checkFromIndexSize(int, int, int)}
+ *
  * [source,java]
  * ----
  * var a = new FileOutputStream("file.name");

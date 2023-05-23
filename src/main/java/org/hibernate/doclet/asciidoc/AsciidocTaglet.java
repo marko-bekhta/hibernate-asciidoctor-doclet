@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.LinkTree;
@@ -128,7 +129,7 @@ public class AsciidocTaglet implements Taglet {
 			String href = linksHelper.javadocLink( referenceElement, element );
 			String label = getLinkLabel( node.getLabel(), referenceElement );
 
-			return "javadoc:" + "stub" + "[ href=" + href + ", label=" + label + "] ";
+			return "javadoc:" + "stub" + "[ href='" + href + "', label='" + label + "'] ";
 		}
 
 		@Override
@@ -162,7 +163,8 @@ public class AsciidocTaglet implements Taglet {
 
 			String label = sb.toString();
 			if ( label.isBlank() ) {
-				label = referenceElement.getSimpleName().toString();
+				label = ( referenceElement instanceof TypeElement ) ? referenceElement.toString()
+						: String.format( "%s#%s", referenceElement.getEnclosingElement().getSimpleName(), referenceElement );
 			}
 			return label;
 		}
