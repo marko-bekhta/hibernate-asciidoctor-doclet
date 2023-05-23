@@ -1,5 +1,5 @@
 [[build]]
-### Build from Source
+=== Build from Source
 
 Building from the source requires at least JDK 11. From the project root directory execute:
 
@@ -11,7 +11,7 @@ Building from the source requires at least JDK 11. From the project root directo
 `Iterable<? extends JavaFileObject> files` list into a `target/javadocs` directory.
 Add your own class with javadocs, or modify any from the list and run the test to inspect the generated output.
 
-### How to write javadoc comments
+=== How to write javadoc comments
 
 This taglet extends the exising Javadoc generation. Javadoc comments can still be written in a standard manner.
 It can be added to an exising project without the need to rewrite all exising Javadocs.
@@ -76,11 +76,11 @@ public class SomeClass {
 ----
 
 
-### How to use in a project
+=== How to use in a project
 
 First you'd need to <<build,build>> this lib so it can be added as a dependency in a project.
 
-#### Gradle
+==== Gradle
 
 Use a local maven repository as that's where we've installed the taglet lib into:
 [source,groovy]
@@ -129,4 +129,58 @@ javadoc {
     }
     //...
 }
+----
+
+
+==== Maven
+Note for maven you'd need to rebuild this project using a `shade` profile since
+using either `additionalDependencies` or `dependencies` to add the Asciidoctor lib doesn't work.
+
+----
+./mvnw clean install -Pshade
+----
+
+Doing so will bundle the required dependencies and then a single jar can be referenced in the maven plugin configuration:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-javadoc-plugin</artifactId>
+    <configuration>
+        <!-- Any other configurations -->
+        <!-- ... -->
+
+        <!-- Add any links for external docs-->
+        <offlineLinks>
+            <offlineLink>
+                <url>${javadoc.org.hibernate.url}</url>
+                <location>${extracted.javadoc.directory}/hibernate-core/</location>
+            </offlineLink>
+        </offlineLinks>
+        <links>
+            <link>https://docs.oracle.com/en/java/javase/11/docs/api/</link>
+        </links>
+
+        <!-- Specify the taglet: -->
+        <taglets>
+            <taglet>
+                <tagletClass>org.hibernate.doclet.asciidoc.AsciidocTaglet</tagletClass>
+                <tagletArtifact>
+                    <groupId>org.hibernate.doclet</groupId>
+                    <artifactId>hibernate-asciidoctor-doclet</artifactId>
+                    <version>1.0-SNAPSHOT</version>
+                </tagletArtifact>
+            </taglet>
+        </taglets>
+
+        <!-- Specify the doclet -->
+        <doclet>org.hibernate.doclet.asciidoc.Asciidoclet</doclet>
+        <docletArtifact>
+            <groupId>org.hibernate.doclet</groupId>
+            <artifactId>hibernate-asciidoctor-doclet</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </docletArtifact>
+    </configuration>
+</plugin>
 ----
