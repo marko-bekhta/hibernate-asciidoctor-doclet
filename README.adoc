@@ -1,0 +1,132 @@
+[[build]]
+### Build from Source
+
+Building from the source requires at least JDK 11. From the project root directory execute:
+
+----
+./mvnw clean install
+----
+
+`org.hibernate.doclet.asciidoc.TagletTest` uses the `AsciidocTaglet` to produce Javadocs for files in the
+`Iterable<? extends JavaFileObject> files` list into a `target/javadocs` directory.
+Add your own class with javadocs, or modify any from the list and run the test to inspect the generated output.
+
+### How to write javadoc comments
+
+This taglet extends the exising Javadoc generation. Javadoc comments can still be written in a standard manner.
+It can be added to an exising project without the need to rewrite all exising Javadocs.
+
+To use the Asciidoctor syntax to write Javadoc comments start a comment with the `@asciidoc` tag.
+Any text that follows this tag and just till the next Javadoc *block* tag will be considered
+as an input when converting from asciidoc markup.
+
+This taglet supports consuming some inline standard javadoc tags:
+
+* `@code` -- if anyone feels like using it instead of a pair of ```` a more natural for asciidoc
+way to mark inline code
+* `@literal` -- to escape any Javadoc-specific special characters or character sequences
+(e.g. `<`, `>`, `@SomeText` and so on).
+* `@link` to point to any code locations as in regular Javadocs. There's support for both
+`links` and `offlinelinks` configuration options at build time to use for external code locations.
+
+These inline tags can be used within the text of a `@asciidoc` block to either escape some
+text that would otherwise fail to build the Javadocs or to use IDE-friendly way to point to some
+other code/doc locations through links.
+
+An example of a Javadoc comment using asciidoc syntax:
+
+[source,java]
+----
+/**
+ * @asciidoc some text in `asciidoc`
+ *
+ * Then also using a standard inline code tag from Javadoc -- {@code some code goes here}.
+ * We can also add links to what we need as in regular javadocs and leverage the built-in IDE support {@link Object#wait(long)}
+ *
+ * Then let's have some asciidoc code samples:
+ *
+ * [source,java]
+ * ----
+ * var a = new FileOutputStream("file.name");
+ *
+ * {@literal @}Entity
+ * class SomeEntity {
+ *     {@literal @}Id
+ *     private Long id;
+ * }
+ * ----
+ *
+ * Here's a code with callouts:
+ *
+ * [source,ruby]
+ * ----
+ * require 'sinatra' {@literal <1>}
+ *
+ * get '/hi' do {@literal <2>} {@literal <3>}
+ *   "Hello World!"
+ * end
+ * ----
+ * {@literal <1> } Library import
+ * {@literal <2> } URL mapping
+ * {@literal <3> } Response block
+ */
+public class SomeClass {
+	//...
+}
+----
+
+
+### How to use in a project
+
+First you'd need to <<build,build>> this lib so it can be added as a dependency in a project.
+
+#### Gradle
+
+Use a local maven repository as that's where we've installed the taglet lib into:
+[source,groovy]
+----
+repositories {
+    mavenCentral()
+    mavenLocal()
+    // ...
+}
+----
+Add the configuration and a dependency, we'll need these to point to our custom taglet/doclet file paths:
+
+[source,groovy]
+----
+configurations {
+    asciidoclet
+}
+dependencies {
+    asciidoclet 'org.hibernate.doclet:hibernate-asciidoctor-doclet:1.0-SNAPSHOT'
+}
+----
+
+Configure the `javadoc` :
+
+[source,groovy]
+----
+javadoc {
+    // ....
+
+    configure( options ) {
+        // Need to specify both doclet and taglet pats.
+        // Even though we mostly care about the taglet, we still need to have
+        // a custom doclet that extends the *standard* one to read some properties/attributes etc.
+        docletpath = configurations.asciidoclet.files.asType(List)
+        tagletPath = configurations.asciidoclet.files.asType(List)
+        // Specify a custom doclet:
+		doclet = 'org.hibernate.doclet.asciidoc.Asciidoclet'
+
+        // add any links for external docs to point to from our javadocs:
+        links += [
+                'https://docs.oracle.com/en/java/javase/11/docs/api/'
+        ]
+        // Specify our custom taglet:
+        taglets 'org.hibernate.doclet.asciidoc.AsciidocTaglet'
+        // any other configurations....
+    }
+    //...
+}
+----
